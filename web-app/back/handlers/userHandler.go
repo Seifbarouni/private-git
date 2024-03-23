@@ -5,14 +5,13 @@ import (
 	"time"
 
 	"github.com/Seifbarouni/private-git/web-app/back/data"
-	"github.com/Seifbarouni/private-git/web-app/back/db"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/golang-jwt/jwt/v5"
 	"golang.org/x/crypto/bcrypt"
 )
 
-var UserService data.UserServiceInterface = data.InitUserService(db.Collection("users"))
+var UserService data.UserServiceInterface = data.InitUserService()
 
 func Login(c *fiber.Ctx) error {
 	var user data.User
@@ -91,7 +90,7 @@ func Register(c *fiber.Ctx) error {
 }
 
 func hashPassword(password string) (string, error) {
-	bytes, err := bcrypt.GenerateFromPassword([]byte(password), 14)
+	bytes, err := bcrypt.GenerateFromPassword([]byte(password), 5)
 	return string(bytes), err
 }
 

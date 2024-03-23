@@ -18,12 +18,13 @@ func main() {
 	}
 
 	app := fiber.New(fiber.Config{
-		Concurrency: 256 * 1024,
+		AppName:               "Private Git",
+		DisableStartupMessage: true,
 	})
 
 	// unrestricted routes
-	app.Post("/register", h.Register)
-	app.Post("/login", h.Login)
+	app.Post("/api/v1/register", h.Register)
+	app.Post("/api/v1/login", h.Login)
 	// app.Get("/refresh", nil)
 
 	// restricted routes
@@ -35,6 +36,5 @@ func main() {
 		},
 	}))
 
-	log.Fatal(app.Listen(":3000"))
-
+	log.Fatal(app.Listen(":" + os.Getenv("PORT")))
 }

@@ -3,6 +3,7 @@ package db
 import (
 	"context"
 	"errors"
+	"log/slog"
 	"os"
 	"time"
 
@@ -30,7 +31,10 @@ func Init() error {
 		return err
 	}
 
-	db = client.Database("private-git")
+	slog.Info("Connected to MongoDB")
+
+	//db = client.Database("private-git")
+	db = client.Database("test")
 	return nil
 }
 
