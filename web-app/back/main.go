@@ -1,44 +1,40 @@
 package main
 
 import (
-	"encoding/json"
-	"log/slog"
-	"net/http"
+	"log"
+	"os"
 
-  m "github.com/Seifbarouni/private-git/web-app/back/middlewares"
+	"github.com/Seifbarouni/private-git/web-app/back/db"
+	h "github.com/Seifbarouni/private-git/web-app/back/handlers"
 
+	jwtware "github.com/gofiber/contrib/jwt"
+	"github.com/gofiber/fiber/v2"
 )
 
-type User struct {
-	Name  string `json:"name"`
-	Email string `json:"email"`
-}
-
-func InitHandlerPost(w http.ResponseWriter, r *http.Request) {
-	user := &User{}
-	err := json.NewDecoder(r.Body).Decode(user)
-	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		return
-	}
-	// retrun the user as JSON
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(user)
-}
-
 func main() {
-	logger := slog.Default()
-
-	mux := http.NewServeMux()
-
-	mux.Handle("POST /",m.AuthorizationMiddleware(http.HandlerFunc(InitHandlerPost)))
-
-	logger.Info("Starting server on port 8080")
-
-	err := http.ListenAndServe(":8080", mux)
-
+	err := db.Init()
 	if err != nil {
-		logger.Error("Failed to start server", "error", err)
+		log.Fatal(err)
 	}
+
+	app := fiber.New(fiber.Config{
+		Concurrency: 256 * 1024,
+	})
+
+	// unrestricted routes
+	app.Post("/register", h.Register)
+	app.Post("/login", h.Login)
+	// app.Get("/refresh", nil)
+
+	// restricted routes
+	v1 := app.Group("/api/v1")
+	v1.Use(jwtware.New(jwtware.Config{
+		SigningKey: jwtware.SigningKey{Key: []byte(os.Getenv("JWT_SECRET"))},
+		ErrorHandler: func(c *fiber.Ctx, err error) error {
+			return c.Status(fiber.StatusUnauthorized).JSON(map[string]string{"error": "unauthorized"})
+		},
+	}))
+
+	log.Fatal(app.Listen(":3000"))
 
 }
