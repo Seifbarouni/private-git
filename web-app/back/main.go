@@ -45,6 +45,11 @@ func main() {
 			return c.Status(fiber.StatusUnauthorized).JSON(map[string]string{"error": "unauthorized"})
 		},
 	}))
+	v1.Get("/repos", h.GeRepos)
+	v1.Get("/repos/:id", h.GetRepoById)
+	v1.Post("/repo", h.CreateRepo)
+	v1.Put("/repo", h.UpdateRepo)
+	v1.Delete("/repo/:id", h.DeleteRepo)
 
 	log.Fatal(app.Listen(":" + port))
 }

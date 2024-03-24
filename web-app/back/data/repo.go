@@ -2,6 +2,7 @@ package data
 
 import (
 	"context"
+	"errors"
 
 	"github.com/Seifbarouni/private-git/web-app/back/db"
 
@@ -19,11 +20,11 @@ type Repo struct {
 
 type RepoServiceInterface interface {
 	CreateRepo(repo *Repo) error
-	GetRepo(id primitive.ObjectID) (*Repo, error)
+	GetRepo(id string, userId string) (*Repo, error)
 	GetRepos() ([]Repo, error)
-	GetReposByOwner(owner primitive.ObjectID) ([]Repo, error)
+	GetReposByOwner(owner string) ([]Repo, error)
 	UpdateRepo(repo *Repo) error
-	DeleteRepo(id primitive.ObjectID) error
+	DeleteRepo(id string) error
 }
 
 type RepoService struct{}
@@ -37,13 +38,23 @@ var reposCol string = "repos"
 func (rs *RepoService) CreateRepo(repo *Repo) error {
 	repo.ID = primitive.NewObjectID()
 	_, err := db.Collection(reposCol).InsertOne(context.TODO(), repo)
+	// TODO: do the actual repo creation with gitolite
+	// TODO: give the owner rw+ permissions to the repo by modifying the gitolite config file
 	return err
 }
 
-func (rs *RepoService) GetRepo(id primitive.ObjectID) (*Repo, error) {
+func (rs *RepoService) GetRepo(id string, userId string) (*Repo, error) {
 	var repo Repo
 	err := db.Collection(reposCol).FindOne(context.TODO(), bson.M{"_id": id}).Decode(&repo)
-	return &repo, err
+	if err != nil {
+		return nil, err
+	}
+
+	if repo.Owner.Hex() != userId {
+		return nil, errors.New("unauthorized")
+	}
+
+	return &repo, nil
 }
 
 func (rs *RepoService) GetRepos() ([]Repo, error) {
@@ -61,7 +72,7 @@ func (rs *RepoService) GetRepos() ([]Repo, error) {
 	return repos, nil
 }
 
-func (rs *RepoService) GetReposByOwner(owner primitive.ObjectID) ([]Repo, error) {
+func (rs *RepoService) GetReposByOwner(owner string) ([]Repo, error) {
 	var repos []Repo
 	cursor, err := db.Collection(reposCol).Find(context.TODO(), bson.M{"owner": owner})
 	if err != nil {
@@ -81,7 +92,7 @@ func (rs *RepoService) UpdateRepo(repo *Repo) error {
 	return err
 }
 
-func (rs *RepoService) DeleteRepo(id primitive.ObjectID) error {
+func (rs *RepoService) DeleteRepo(id string) error {
 	_, err := db.Collection(reposCol).UpdateOne(context.TODO(), bson.M{"_id": id}, bson.M{"$set": bson.M{"status": "deleted"}})
 	return err
 }

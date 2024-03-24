@@ -34,8 +34,9 @@ func Login(c *fiber.Ctx) error {
 	}
 
 	claims := jwt.MapClaims{
-		"name":  userCheck.FullName,
+		"name":  userCheck.UserName,
 		"email": userCheck.Email,
+		"id":    userCheck.ID.Hex(),
 		"exp":   time.Now().Add(time.Hour * 72).Unix(),
 	}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
@@ -73,8 +74,9 @@ func Register(c *fiber.Ctx) error {
 		})
 	}
 	claims := jwt.MapClaims{
-		"name":  user.FullName,
+		"name":  user.UserName,
 		"email": user.Email,
+		"id":    user.ID.Hex(),
 		"exp":   time.Now().Add(time.Hour * 72).Unix(),
 	}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
