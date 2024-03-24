@@ -2,6 +2,7 @@ package data
 
 import (
 	"context"
+	"encoding/base64"
 	"errors"
 
 	"github.com/Seifbarouni/private-git/web-app/back/db"
@@ -73,7 +74,11 @@ func (us *UserService) GetUserByEmail(email string) (*User, error) {
 }
 
 func (us *UserService) AddPublicKey(id primitive.ObjectID, key string) error {
-	_, err := db.Collection(usersCol).UpdateOne(context.TODO(), bson.M{"_id": id}, bson.M{"$set": bson.M{"ssh_key": key}})
+	encodedKey, err := base64.StdEncoding.DecodeString(key)
+	if err != nil {
+		return err
+	}
+	_, err = db.Collection(usersCol).UpdateOne(context.TODO(), bson.M{"_id": id}, bson.M{"$set": bson.M{"ssh_key": encodedKey}})
 	return err
 }
 
