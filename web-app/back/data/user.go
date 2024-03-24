@@ -11,24 +11,25 @@ import (
 )
 
 type User struct {
-	ID       primitive.ObjectID `bson:"_id" json:"id"`
-	FullName string             `bson:"full_name" json:"full_name"`
-	Email    string             `bson:"email" json:"email"`
-	UserName string             `bson:"user_name" json:"user_name"`
-	Password string             `bson:"password" json:"password"`
-	Status   string             `bson:"status" json:"status"`
+	ID       primitive.ObjectID   `bson:"_id" json:"id"`
+	FullName string               `bson:"full_name" json:"full_name"`
+	Email    string               `bson:"email" json:"email"`
+	UserName string               `bson:"user_name" json:"user_name"`
+	Password string               `bson:"password" json:"password"`
+	Status   string               `bson:"status" json:"status"`
+	SSHKey   string               `bson:"ssh_key" json:"ssh_key"`
+	Repos    []primitive.ObjectID `bson:"repos" json:"repos"`
 }
 
 type UserServiceInterface interface {
 	CreateUser(user *User) error
-	GetUser(id int) (*User, error)
+	GetUser(id primitive.ObjectID) (*User, error)
 	GetUserByEmail(email string) (*User, error)
 	UpdateUser(user *User) error
-	DeleteUser(id int) error
+	DeleteUser(id primitive.ObjectID) error
 }
 
-type UserService struct {
-}
+type UserService struct{}
 
 func InitUserService() *UserService {
 	return &UserService{}
@@ -43,15 +44,19 @@ func (us *UserService) CreateUser(user *User) error {
 	if err == nil {
 		return errors.New("user already exists")
 	}
+
 	user.ID = primitive.NewObjectID()
+	user.Status = "active"
+	user.SSHKey = ""
+	user.Repos = []primitive.ObjectID{}
 	_, err = u.InsertOne(context.TODO(), user)
 
 	return err
 }
 
-func (us *UserService) GetUser(id int) (*User, error) {
+func (us *UserService) GetUser(id primitive.ObjectID) (*User, error) {
 	var user User
-	err := db.Collection(usersCol).FindOne(context.TODO(), bson.M{"id": id}).Decode(&user)
+	err := db.Collection(usersCol).FindOne(context.TODO(), bson.M{"_id": id}).Decode(&user)
 	if err != nil {
 		return nil, err
 	}
@@ -67,12 +72,17 @@ func (us *UserService) GetUserByEmail(email string) (*User, error) {
 	return &user, nil
 }
 
-func (us *UserService) UpdateUser(user *User) error {
-	_, err := db.Collection(usersCol).ReplaceOne(context.TODO(), bson.M{"id": user.ID}, user)
+func (us *UserService) AddPublicKey(id primitive.ObjectID, key string) error {
+	_, err := db.Collection(usersCol).UpdateOne(context.TODO(), bson.M{"_id": id}, bson.M{"$set": bson.M{"ssh_key": key}})
 	return err
 }
 
-func (us *UserService) DeleteUser(id int) error {
-	_, err := db.Collection(usersCol).UpdateOne(context.TODO(), bson.M{"id": id}, bson.M{"$set": bson.M{"status": "deleted"}})
+func (us *UserService) UpdateUser(user *User) error {
+	_, err := db.Collection(usersCol).ReplaceOne(context.TODO(), bson.M{"_id": user.ID}, user)
+	return err
+}
+
+func (us *UserService) DeleteUser(id primitive.ObjectID) error {
+	_, err := db.Collection(usersCol).UpdateOne(context.TODO(), bson.M{"_id": id}, bson.M{"$set": bson.M{"status": "deleted"}})
 	return err
 }

@@ -17,6 +17,16 @@ func main() {
 		log.Fatal(err)
 	}
 
+	port := os.Getenv("PORT")
+	if port == "" {
+		log.Fatal("$PORT must be set")
+	}
+
+	jwt_secret := os.Getenv("JWT_SECRET")
+	if jwt_secret == "" {
+		log.Fatal("$JWT_SECRET must be set")
+	}
+
 	app := fiber.New(fiber.Config{
 		AppName:               "Private Git",
 		DisableStartupMessage: true,
@@ -30,11 +40,11 @@ func main() {
 	// restricted routes
 	v1 := app.Group("/api/v1")
 	v1.Use(jwtware.New(jwtware.Config{
-		SigningKey: jwtware.SigningKey{Key: []byte(os.Getenv("JWT_SECRET"))},
+		SigningKey: jwtware.SigningKey{Key: []byte(jwt_secret)},
 		ErrorHandler: func(c *fiber.Ctx, err error) error {
 			return c.Status(fiber.StatusUnauthorized).JSON(map[string]string{"error": "unauthorized"})
 		},
 	}))
 
-	log.Fatal(app.Listen(":" + os.Getenv("PORT")))
+	log.Fatal(app.Listen(":" + port))
 }
