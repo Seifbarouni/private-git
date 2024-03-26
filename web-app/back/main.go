@@ -12,7 +12,7 @@ import (
 )
 
 func main() {
-	err := utils.AddUserToRepo("seif", "foo", "RW+")
+	err := utils.AddUserToRepo("seif", "pubkeyyyy", "foo", "RW+")
 	if err != nil {
 		log.Fatal(err)
 	}
