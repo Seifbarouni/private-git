@@ -15,7 +15,7 @@ var (
 )
 
 func AddUserToRepo(username string, pubKey string, repo string, access string) error {
-	errChan := make(chan error)
+	errChan := make(chan error, 2)
 	wg = sync.WaitGroup{}
 	wg.Add(2)
 
@@ -24,10 +24,8 @@ func AddUserToRepo(username string, pubKey string, repo string, access string) e
 	// Add user to keydir
 	go addPubKey(username, pubKey, errChan)
 
-	go func() {
-		wg.Wait()
-		close(errChan)
-	}()
+	wg.Wait()
+	close(errChan)
 
 	for err := range errChan {
 		if err != nil {
