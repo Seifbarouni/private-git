@@ -5,6 +5,7 @@ import (
 	"errors"
 
 	"github.com/Seifbarouni/private-git/web-app/back/db"
+	"github.com/Seifbarouni/private-git/web-app/back/utils"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -34,12 +35,20 @@ func InitRepoService() *RepoService {
 }
 
 var reposCol string = "repos"
+var userService UserServiceInterface = InitUserService()
 
 func (rs *RepoService) CreateRepo(repo *Repo) error {
+	user, err := userService.GetUser(repo.Owner)
+	if err != nil {
+		return err
+	}
+
+	err = utils.AddUserToRepo(user.UserName, user.SSHKey, repo.Name, "RW+")
+	if err != nil {
+		return err
+	}
 	repo.ID = primitive.NewObjectID()
-	_, err := db.Collection(reposCol).InsertOne(context.TODO(), repo)
-	// TODO: do the actual repo creation with gitolite
-	// TODO: give the owner rw+ permissions to the repo by modifying the gitolite config file
+	_, err = db.Collection(reposCol).InsertOne(context.TODO(), repo)
 	return err
 }
 
