@@ -1,1 +1,11 @@
 # Private-Git
+
+## ENV backend
+
+JWT_SECRET
+MONGO_URI
+PORT
+SSH_SERVER
+SSH_USER
+SSH_KEY_PATH
+
