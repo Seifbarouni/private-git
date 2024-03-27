@@ -1,6 +1,6 @@
 module github.com/Seifbarouni/private-git/web-app/back
 
-go 1.22.0
+go 1.22.1
 
 require (
 	github.com/gofiber/contrib/jwt v1.0.8
