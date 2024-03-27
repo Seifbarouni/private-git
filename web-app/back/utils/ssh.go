@@ -7,11 +7,17 @@ import (
 )
 
 func ConnectToServer() (*ssh.Session, error) {
+	publicKey, err := publicKeyFile(os.Getenv("SSH_KEY_PATH"))
+	if err != nil {
+		return nil, err
+	}
+
 	sshConfig := &ssh.ClientConfig{
 		User: os.Getenv("SSH_USER"),
 		Auth: []ssh.AuthMethod{
-			publicKeyFile(os.Getenv("SSH_KEY_PATH")),
+			publicKey,
 		},
+		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
 	}
 
 	client, err := ssh.Dial("tcp", os.Getenv("SSH_SERVER"), sshConfig)
@@ -24,20 +30,17 @@ func ConnectToServer() (*ssh.Session, error) {
 		return nil, err
 	}
 
-	// TODO: pipe session output to stdout
-
 	return session, nil
 }
 
-func publicKeyFile(file string) ssh.AuthMethod {
+func publicKeyFile(file string) (ssh.AuthMethod, error) {
 	buffer, err := os.ReadFile(file)
 	if err != nil {
-		return nil
+		return nil, err
 	}
-
 	key, err := ssh.ParsePrivateKey(buffer)
 	if err != nil {
-		return nil
+		return nil, err
 	}
-	return ssh.PublicKeys(key)
+	return ssh.PublicKeys(key), nil
 }
