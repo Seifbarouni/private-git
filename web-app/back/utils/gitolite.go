@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"fmt"
 	"os"
-	"os/exec"
 	"sync"
 
 	"golang.org/x/crypto/ssh"
@@ -48,15 +47,35 @@ func AddUserToRepo(username string, pubKey string, repo string, access string) e
 }
 
 func addLineToFile(filename string, line string, lineToAdd string, errChan chan error, session *ssh.Session) {
-	// stfu compiler
-	_ = session
-
 	defer wg.Done()
-	file, err := os.Open(filename)
+
+	text, err := session.Output(fmt.Sprintf("cat %s", filename))
 	if err != nil {
 		errChan <- err
 		return
 	}
+
+	if string(text) == "" {
+		errChan <- fmt.Errorf("file %s is empty", filename)
+		return
+	}
+
+	// create a temp file to store the current content
+	tempFilename := "tmp"
+
+	file, err := os.Create(tempFilename)
+	if err != nil {
+		errChan <- err
+		return
+	}
+
+	writer := bufio.NewWriter(file)
+	_, err = writer.WriteString(string(text))
+	if err != nil {
+		errChan <- err
+		return
+	}
+	writer.Flush()
 
 	scanner := bufio.NewScanner(file)
 	lines := []string{}
@@ -73,13 +92,13 @@ func addLineToFile(filename string, line string, lineToAdd string, errChan chan 
 	}
 	file.Close()
 
-	file, err = os.Create(filename)
+	file, err = os.Create(tempFilename)
 	if err != nil {
 		errChan <- err
 		return
 	}
 
-	writer := bufio.NewWriter(file)
+	writer = bufio.NewWriter(file)
 	for _, l := range lines {
 		_, err := writer.WriteString(l + "\n")
 		if err != nil {
@@ -88,60 +107,59 @@ func addLineToFile(filename string, line string, lineToAdd string, errChan chan 
 		}
 	}
 	writer.Flush()
+
+	scanner = bufio.NewScanner(file)
+
+	var newContent string
+	for scanner.Scan() {
+		newContent += scanner.Text() + "\n"
+	}
+
+	_, err = session.Output(fmt.Sprintf("echo %s > %s", newContent, filename))
+	if err != nil {
+		errChan <- err
+		return
+	}
+
 	errChan <- nil
 }
 
 func addPubKey(username string, key string, errChan chan error, session *ssh.Session) {
-	// stfu compiler
-	_ = session
-
 	defer wg.Done()
-	file, err := os.Create(fmt.Sprintf("%s/keydir/%s.pub", GitoliteAdminPath, username))
+
+	_, err := session.Output(fmt.Sprintf("echo %s > %s/keydir/%s.pub", key, GitoliteAdminPath, username))
+
 	if err != nil {
 		errChan <- err
 		return
 	}
 
-	writer := bufio.NewWriter(file)
-	_, err = writer.WriteString(key)
-	if err != nil {
-		errChan <- err
-		return
-	}
-	writer.Flush()
 	errChan <- nil
 }
 
 func addCommitPush(msg string, session *ssh.Session) error {
-	// stfu compiler
-	_ = session
+	_, err := session.Output(fmt.Sprintf("cd %s", GitoliteAdminPath))
 
-	// TODO: refactor this to use the ssh session to run the commands
-
-	cmd := exec.Command("git", "--git-dir", GitoliteAdminPath, "--work-tree", GitoliteAdminPath, "add", fmt.Sprintf("%s/conf", GitoliteAdminPath))
-	cmd.Stdout = os.Stdout
-	err := cmd.Run()
 	if err != nil {
 		return err
 	}
 
-	cmd = exec.Command("git", "--git-dir", GitoliteAdminPath, "--work-tree", GitoliteAdminPath, "add", fmt.Sprintf("%s/keydir", GitoliteAdminPath))
-	cmd.Stdout = os.Stdout
-	err = cmd.Run()
+	_, err = session.Output("git add conf")
 	if err != nil {
 		return err
 	}
 
-	cmd = exec.Command("git", "--git-dir", GitoliteAdminPath, "--work-tree", GitoliteAdminPath, "commit", "-m", msg)
-	cmd.Stdout = os.Stdout
-	err = cmd.Run()
+	_, err = session.Output("git add keydir")
 	if err != nil {
 		return err
 	}
 
-	cmd = exec.Command("git", "--git-dir", GitoliteAdminPath, "--work-tree", GitoliteAdminPath, "push")
-	cmd.Stdout = os.Stdout
-	err = cmd.Run()
+	_, err = session.Output(fmt.Sprintf("git commit -m %s", msg))
+	if err != nil {
+		return err
+	}
+
+	_, err = session.Output("git push")
 	if err != nil {
 		return err
 	}
