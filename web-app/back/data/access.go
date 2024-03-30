@@ -1,6 +1,12 @@
 package data
 
 import (
+	"context"
+
+	"github.com/Seifbarouni/private-git/web-app/back/db"
+	"github.com/Seifbarouni/private-git/web-app/back/utils"
+
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
@@ -24,18 +30,55 @@ func InitAccessService() *AccessService {
 	return &AccessService{}
 }
 
+var accessCol string = "accesses"
+
 func (ac *AccessService) GrantAccess(access *Access) error {
-	return nil
+	user, err := userService.GetUser(access.UserId)
+	if err != nil {
+		return err
+	}
+
+	err = utils.AddUserToRepo(user.UserName, user.SSHKey, access.RepoId.Hex(), access.GrantType)
+
+	if err != nil {
+		return err
+	}
+
+	access.ID = primitive.NewObjectID()
+	_, err = db.Collection(accessCol).InsertOne(context.TODO(), access)
+	return err
 }
 
 func (ac *AccessService) GetAccessesByRepoId(repoId string) ([]Access, error) {
-	return []Access{}, nil
+	var accesses []Access
+	cursor, err := db.Collection(accessCol).Find(context.TODO(), bson.M{"repo_id": repoId})
+	if err != nil {
+		return accesses, err
+	}
+
+	if err = cursor.All(context.TODO(), &accesses); err != nil {
+		return accesses, err
+	}
+
+	return accesses, nil
 }
 
 func (ac *AccessService) GetAccessesByUserId(repoId string) ([]Access, error) {
-	return []Access{}, nil
+	var accesses []Access
+	cursor, err := db.Collection(accessCol).Find(context.TODO(), bson.M{"user_id": repoId})
+	if err != nil {
+		return accesses, err
+	}
+
+	if err = cursor.All(context.TODO(), &accesses); err != nil {
+		return accesses, err
+	}
+
+	return accesses, nil
 }
 
+// TODO: remove the user from the gitolite config file
 func (ac *AccessService) RevokeAccess(userId string, repoId string) error {
-	return nil
+	_, err := db.Collection(accessCol).DeleteOne(context.TODO(), bson.M{"user_id": userId, "repo_id": repoId})
+	return err
 }

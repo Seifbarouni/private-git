@@ -52,8 +52,9 @@ func main() {
 	v1.Delete("/repo/:id", h.DeleteRepo)
 
 	// access routes
+	v1.Get("/accesses", h.GetAccesses)
 	v1.Post("/access", h.GrantAccess)
-	v1.Delete("/access", h.RevokeAccess)
+	v1.Delete("/access/:repo_id/:user_id", h.RevokeAccess)
 
 	log.Fatal(app.Listen(":" + port))
 }
