@@ -46,6 +46,22 @@ func AddUserToRepo(username string, pubKey string, repo string, access string) e
 	return err
 }
 
+func RemoveUserFromRepo(username string, repo string) error {
+	session, err := ConnectToServer()
+
+	if err != nil {
+		return err
+	}
+
+	defer session.Close()
+	// TODO: delete user from conf dir
+	// removeLineFromFile(fmt.Sprintf("%s/conf/gitolite.conf", GitoliteAdminPath), fmt.Sprintf("    RW+         =   %s", username), session)
+
+	err = addCommitPush(fmt.Sprintf("Remove user %s from repo %s", username, repo), session)
+
+	return err
+}
+
 func addLineToFile(filename string, line string, lineToAdd string, errChan chan error, session *ssh.Session) {
 	defer wg.Done()
 
