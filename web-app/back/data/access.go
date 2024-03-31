@@ -21,7 +21,7 @@ type AccessServiceInterface interface {
 	GrantAccess(access *Access) error
 	GetAccessesByRepoId(repoId string) ([]Access, error)
 	GetAccessesByUserId(userId string) ([]Access, error)
-	RevokeAccess(userId string, repoId string) error
+	RevokeAccess(userId string, repo *Repo) error
 }
 
 type AccessService struct{}
@@ -77,8 +77,22 @@ func (ac *AccessService) GetAccessesByUserId(repoId string) ([]Access, error) {
 	return accesses, nil
 }
 
-// TODO: remove the user from the gitolite config file
-func (ac *AccessService) RevokeAccess(userId string, repoId string) error {
-	_, err := db.Collection(accessCol).DeleteOne(context.TODO(), bson.M{"user_id": userId, "repo_id": repoId})
+func (ac *AccessService) RevokeAccess(userId string, repo *Repo) error {
+	primUserId, err := primitive.ObjectIDFromHex(userId)
+	if err != nil {
+		return err
+	}
+
+	user, err := userService.GetUser(primUserId)
+	if err != nil {
+		return err
+	}
+
+	err = utils.RemoveUserFromRepo(user.UserName, repo.Name)
+	if err != nil {
+		return err
+	}
+
+	_, err = db.Collection(accessCol).DeleteOne(context.TODO(), bson.M{"user_id": userId, "repo_id": repo.ID.Hex()})
 	return err
 }

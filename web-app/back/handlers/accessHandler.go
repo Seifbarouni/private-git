@@ -87,7 +87,7 @@ func RevokeAccess(c *fiber.Ctx) error {
 		})
 	}
 
-	_, err = RepoService.GetRepo(repoID, userID.Hex())
+	repo, err := RepoService.GetRepo(repoID, userID.Hex())
 
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
@@ -95,7 +95,7 @@ func RevokeAccess(c *fiber.Ctx) error {
 		})
 	}
 
-	err = AccessService.RevokeAccess(rev_user_id, repoID)
+	err = AccessService.RevokeAccess(rev_user_id, repo)
 
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
