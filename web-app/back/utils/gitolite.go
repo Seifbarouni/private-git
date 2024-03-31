@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"fmt"
 	"os"
+	"strings"
 	"sync"
 
 	"golang.org/x/crypto/ssh"
@@ -54,8 +55,12 @@ func RemoveUserFromRepo(username string, repo string) error {
 	}
 
 	defer session.Close()
-	// TODO: delete user from conf dir
-	// removeLineFromFile(fmt.Sprintf("%s/conf/gitolite.conf", GitoliteAdminPath), fmt.Sprintf("    RW+         =   %s", username), session)
+
+	err = removeLineFromFile(fmt.Sprintf("%s/conf/gitolite.conf", GitoliteAdminPath), repo, username, session)
+
+	if err != nil {
+		return err
+	}
 
 	err = addCommitPush(fmt.Sprintf("Remove user %s from repo %s", username, repo), session)
 
@@ -76,10 +81,7 @@ func addLineToFile(filename string, line string, lineToAdd string, errChan chan 
 		return
 	}
 
-	// create a temp file to store the current content
-	tempFilename := "tmp"
-
-	file, err := os.Create(tempFilename)
+	file, err := os.Create("tmp")
 	if err != nil {
 		errChan <- err
 		return
@@ -108,28 +110,7 @@ func addLineToFile(filename string, line string, lineToAdd string, errChan chan 
 	}
 	file.Close()
 
-	file, err = os.Create(tempFilename)
-	if err != nil {
-		errChan <- err
-		return
-	}
-
-	writer = bufio.NewWriter(file)
-	for _, l := range lines {
-		_, err := writer.WriteString(l + "\n")
-		if err != nil {
-			errChan <- err
-			return
-		}
-	}
-	writer.Flush()
-
-	scanner = bufio.NewScanner(file)
-
-	var newContent string
-	for scanner.Scan() {
-		newContent += scanner.Text() + "\n"
-	}
+	newContent := strings.Join(lines, "\n")
 
 	_, err = session.Output(fmt.Sprintf("echo %s > %s", newContent, filename))
 	if err != nil {
@@ -181,4 +162,59 @@ func addCommitPush(msg string, session *ssh.Session) error {
 	}
 
 	return nil
+}
+
+func removeLineFromFile(filename string, repo string, username string, session *ssh.Session) error {
+	text, err := session.Output(fmt.Sprintf("cat %s", filename))
+	if err != nil {
+		return err
+	}
+
+	if string(text) == "" {
+		return fmt.Errorf("%s is empty", filename)
+	}
+
+	tempFilename := "tmp"
+
+	file, err := os.Create(tempFilename)
+	if err != nil {
+		return err
+	}
+
+	writer := bufio.NewWriter(file)
+	_, err = writer.WriteString(string(text))
+	if err != nil {
+		return err
+	}
+	writer.Flush()
+
+	scanner := bufio.NewScanner(file)
+	lines := []string{}
+	foundRepo := false
+	for scanner.Scan() {
+		txt := scanner.Text()
+
+		if strings.Contains(txt, repo) {
+			foundRepo = true
+			lines = append(lines, txt)
+			continue
+		}
+
+		if foundRepo && strings.Contains(txt, username) {
+			foundRepo = false
+			continue
+		}
+		lines = append(lines, txt)
+	}
+
+	if err = scanner.Err(); err != nil {
+		return err
+	}
+	file.Close()
+
+	newContent := strings.Join(lines, "\n")
+
+	_, err = session.Output(fmt.Sprintf("echo %s > %s", newContent, filename))
+
+	return err
 }
