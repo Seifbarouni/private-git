@@ -14,14 +14,20 @@ func GeRepos(c *fiber.Ctx) error {
 	userId, err := getUserIdFromToken(c)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": "error getting user id",
+			"error": data.APIError{
+				Message: "error getting user id",
+				Status:  fiber.StatusInternalServerError,
+			},
 		})
 	}
 
 	repos, err := RepoService.GetReposByOwner(userId.Hex())
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": "error getting repos",
+			"error": data.APIError{
+				Message: "error getting repos",
+				Status:  fiber.StatusInternalServerError,
+			},
 		})
 	}
 
@@ -34,7 +40,10 @@ func GetRepoById(c *fiber.Ctx) error {
 	userId, err := getUserIdFromToken(c)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": "error getting user id",
+			"error": data.APIError{
+				Message: "error getting user id",
+				Status:  fiber.StatusInternalServerError,
+			},
 		})
 	}
 
@@ -42,7 +51,10 @@ func GetRepoById(c *fiber.Ctx) error {
 	repo, err := RepoService.GetRepo(repoId, userId.Hex())
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": err.Error(),
+			"error": data.APIError{
+				Message: err.Error(),
+				Status:  fiber.StatusInternalServerError,
+			},
 		})
 	}
 
@@ -56,14 +68,20 @@ func CreateRepo(c *fiber.Ctx) error {
 	userId, err := getUserIdFromToken(c)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": "error getting user id",
+			"error": data.APIError{
+				Message: "error getting user id",
+				Status:  fiber.StatusInternalServerError,
+			},
 		})
 	}
 
 	repo := new(data.Repo)
 	if err := c.BodyParser(repo); err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": "error parsing request body",
+			"error": data.APIError{
+				Message: "error parsing request body",
+				Status:  fiber.StatusInternalServerError,
+			},
 		})
 	}
 
@@ -72,7 +90,10 @@ func CreateRepo(c *fiber.Ctx) error {
 	err = RepoService.CreateRepo(repo)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": "error creating repo",
+			"error": data.APIError{
+				Message: "error creating repo",
+				Status:  fiber.StatusInternalServerError,
+			},
 		})
 	}
 
@@ -85,25 +106,37 @@ func UpdateRepo(c *fiber.Ctx) error {
 	userId, err := getUserIdFromToken(c)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": "error getting user id",
+			"error": data.APIError{
+				Message: "error getting user id",
+				Status:  fiber.StatusInternalServerError,
+			},
 		})
 	}
 	repo := new(data.Repo)
 	if err := c.BodyParser(repo); err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": "error parsing request body",
+			"error": data.APIError{
+				Message: "error parsing request body",
+				Status:  fiber.StatusInternalServerError,
+			},
 		})
 	}
 	if repo.Owner.Hex() != userId.Hex() {
 		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
-			"error": "unauthorized",
+			"error": data.APIError{
+				Message: "unauthorized",
+				Status:  fiber.StatusInternalServerError,
+			},
 		})
 	}
 
 	err = RepoService.UpdateRepo(repo)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": "error updating repo",
+			"error": data.APIError{
+				Message: "error updating repo",
+				Status:  fiber.StatusInternalServerError,
+			},
 		})
 	}
 
@@ -116,7 +149,10 @@ func DeleteRepo(c *fiber.Ctx) error {
 	userId, err := getUserIdFromToken(c)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": "error getting user id",
+			"error": data.APIError{
+				Message: "error getting user id",
+				Status:  fiber.StatusInternalServerError,
+			},
 		})
 	}
 
@@ -124,14 +160,20 @@ func DeleteRepo(c *fiber.Ctx) error {
 	repo, err := RepoService.GetRepo(repoId, userId.Hex())
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": err.Error(),
+			"error": data.APIError{
+				Message: err.Error(),
+				Status:  fiber.StatusInternalServerError,
+			},
 		})
 	}
 
 	err = RepoService.DeleteRepo(repoId)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": "error deleting repo",
+			"error": data.APIError{
+				Message: "error deleting repo",
+				Status:  fiber.StatusInternalServerError,
+			},
 		})
 	}
 

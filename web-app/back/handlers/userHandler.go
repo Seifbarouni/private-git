@@ -17,19 +17,28 @@ func Login(c *fiber.Ctx) error {
 	var user data.User
 	if err := c.BodyParser(&user); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"message": err.Error(),
+			"error": data.APIError{
+				Message: err.Error(),
+				Status:  fiber.StatusBadRequest,
+			},
 		})
 	}
 	userCheck, err := UserService.GetUserByEmail(user.Email)
 	if err != nil {
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
-			"message": "user not found",
+			"error": data.APIError{
+				Message: "user not found",
+				Status:  fiber.StatusNotFound,
+			},
 		})
 	}
 
 	if !checkPasswordHash(user.Password, userCheck.Password) {
 		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
-			"message": "invalid password",
+			"error": data.APIError{
+				Message: "invalid password",
+				Status:  fiber.StatusUnauthorized,
+			},
 		})
 	}
 
@@ -55,14 +64,20 @@ func Register(c *fiber.Ctx) error {
 	var user data.User
 	if err := c.BodyParser(&user); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"message": err.Error(),
+			"error": data.APIError{
+				Message: err.Error(),
+				Status:  fiber.StatusBadRequest,
+			},
 		})
 	}
 
 	hash, err := hashPassword(user.Password)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"message": err.Error(),
+			"error": data.APIError{
+				Message: err.Error(),
+				Status:  fiber.StatusInternalServerError,
+			},
 		})
 	}
 	user.Password = hash
@@ -70,7 +85,10 @@ func Register(c *fiber.Ctx) error {
 
 	if err := UserService.CreateUser(&user); err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"message": err.Error(),
+			"error": data.APIError{
+				Message: err.Error(),
+				Status:  fiber.StatusInternalServerError,
+			},
 		})
 	}
 	claims := jwt.MapClaims{
