@@ -4,6 +4,7 @@ import (
 	"log"
 	"os"
 
+	"github.com/Seifbarouni/private-git/web-app/back/data"
 	"github.com/Seifbarouni/private-git/web-app/back/db"
 	h "github.com/Seifbarouni/private-git/web-app/back/handlers"
 	jwtware "github.com/gofiber/contrib/jwt"
@@ -34,14 +35,17 @@ func main() {
 	// unrestricted routes
 	app.Post("/api/v1/register", h.Register)
 	app.Post("/api/v1/login", h.Login)
-	// app.Get("/refresh", nil)
 
 	// restricted routes
 	v1 := app.Group("/api/v1")
 	v1.Use(jwtware.New(jwtware.Config{
 		SigningKey: jwtware.SigningKey{Key: []byte(jwt_secret)},
 		ErrorHandler: func(c *fiber.Ctx, err error) error {
-			return c.Status(fiber.StatusUnauthorized).JSON(map[string]string{"error": "unauthorized"})
+			return c.Status(fiber.StatusUnauthorized).JSON(map[string]data.APIError{"error": {
+				Message: "unaauthorized",
+				Status:  fiber.StatusUnauthorized,
+			},
+			})
 		},
 	}))
 	// repos routes
