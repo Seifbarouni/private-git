@@ -42,7 +42,7 @@ func main() {
 		SigningKey: jwtware.SigningKey{Key: []byte(jwt_secret)},
 		ErrorHandler: func(c *fiber.Ctx, err error) error {
 			return c.Status(fiber.StatusUnauthorized).JSON(map[string]data.APIError{"error": {
-				Message: "unaauthorized",
+				Message: "unauthorized",
 				Status:  fiber.StatusUnauthorized,
 			},
 			})
