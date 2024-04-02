@@ -47,6 +47,7 @@ func (rs *RepoService) CreateRepo(repo *Repo) error {
 	if err != nil {
 		return err
 	}
+
 	repo.ID = primitive.NewObjectID()
 	_, err = db.Collection(reposCol).InsertOne(context.TODO(), repo)
 	return err
@@ -78,6 +79,10 @@ func (rs *RepoService) GetRepos() ([]Repo, error) {
 		cursor.Decode(&repo)
 		repos = append(repos, repo)
 	}
+	if repos == nil {
+		repos = []Repo{}
+	}
+
 	return repos, nil
 }
 
@@ -93,6 +98,10 @@ func (rs *RepoService) GetReposByOwner(owner string) ([]Repo, error) {
 		cursor.Decode(&repo)
 		repos = append(repos, repo)
 	}
+	if repos == nil {
+		repos = []Repo{}
+	}
+
 	return repos, nil
 }
 
