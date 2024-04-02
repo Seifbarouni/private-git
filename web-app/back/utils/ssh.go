@@ -2,6 +2,7 @@ package utils
 
 import (
 	"os"
+	"time"
 
 	"golang.org/x/crypto/ssh"
 )
@@ -17,6 +18,7 @@ func ConnectToServer() (*ssh.Session, error) {
 		Auth: []ssh.AuthMethod{
 			publicKey,
 		},
+		Timeout:         5 * time.Second,
 		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
 	}
 
@@ -29,7 +31,6 @@ func ConnectToServer() (*ssh.Session, error) {
 	if err != nil {
 		return nil, err
 	}
-
 	return session, nil
 }
 
