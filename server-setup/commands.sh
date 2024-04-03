@@ -21,7 +21,7 @@ source $HOME/.bashrc
 
 # Initialize gitolite
 
-gitolite setup -pk seif.pub
+gitolite setup -pk admin.pub
 
 # Exit git user
 exit
