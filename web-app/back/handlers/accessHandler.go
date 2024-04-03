@@ -1,6 +1,8 @@
 package handlers
 
 import (
+	"fmt"
+
 	"github.com/Seifbarouni/private-git/web-app/back/data"
 
 	"github.com/gofiber/fiber/v2"
@@ -13,7 +15,7 @@ func GrantAccess(c *fiber.Ctx) error {
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": data.APIError{
-				Message: "error getting user id",
+				Message: fmt.Sprintf("error getting user id: %s", err.Error()),
 				Status:  fiber.StatusInternalServerError,
 			},
 		})
@@ -23,7 +25,7 @@ func GrantAccess(c *fiber.Ctx) error {
 	if err := c.BodyParser(access); err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": data.APIError{
-				Message: "error parsing request",
+				Message: fmt.Sprintf("error parsing request body: %s", err.Error()),
 				Status:  fiber.StatusInternalServerError,
 			},
 		})
@@ -34,7 +36,7 @@ func GrantAccess(c *fiber.Ctx) error {
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": data.APIError{
-				Message: "error getting repo",
+				Message: err.Error(),
 				Status:  fiber.StatusInternalServerError,
 			},
 		})
@@ -45,7 +47,7 @@ func GrantAccess(c *fiber.Ctx) error {
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": data.APIError{
-				Message: "error granting access",
+				Message: fmt.Sprintf("error granting access: %s", err.Error()),
 				Status:  fiber.StatusInternalServerError,
 			},
 		})
@@ -60,7 +62,7 @@ func GetAccesses(c *fiber.Ctx) error {
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": data.APIError{
-				Message: "error getting user id",
+				Message: fmt.Sprintf("error getting user id: %s", err.Error()),
 				Status:  fiber.StatusInternalServerError,
 			},
 		})
@@ -87,7 +89,7 @@ func RevokeAccess(c *fiber.Ctx) error {
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": data.APIError{
-				Message: "error getting user id ",
+				Message: fmt.Sprintf("error getting user id: %s", err.Error()),
 				Status:  fiber.StatusInternalServerError,
 			},
 		})
@@ -109,7 +111,7 @@ func RevokeAccess(c *fiber.Ctx) error {
 	if rev_user_id == "" {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": data.APIError{
-				Message: "error getting user id ",
+				Message: "error getting user id",
 				Status:  fiber.StatusInternalServerError,
 			},
 		})
@@ -120,7 +122,7 @@ func RevokeAccess(c *fiber.Ctx) error {
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": data.APIError{
-				Message: "error getting repo",
+				Message: fmt.Sprintf("error getting repo: %s", err.Error()),
 				Status:  fiber.StatusInternalServerError,
 			},
 		})
@@ -131,7 +133,7 @@ func RevokeAccess(c *fiber.Ctx) error {
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": data.APIError{
-				Message: "error revoking access",
+				Message: fmt.Sprintf("error revoking access: %s", err.Error()),
 				Status:  fiber.StatusInternalServerError,
 			},
 		})

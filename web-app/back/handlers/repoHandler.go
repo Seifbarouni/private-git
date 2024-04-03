@@ -1,6 +1,8 @@
 package handlers
 
 import (
+	"fmt"
+
 	"github.com/Seifbarouni/private-git/web-app/back/data"
 
 	"github.com/gofiber/fiber/v2"
@@ -15,7 +17,7 @@ func GeRepos(c *fiber.Ctx) error {
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": data.APIError{
-				Message: "error getting user id",
+				Message: fmt.Sprintf("error getting user id: %s", err.Error()),
 				Status:  fiber.StatusInternalServerError,
 			},
 		})
@@ -25,7 +27,7 @@ func GeRepos(c *fiber.Ctx) error {
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": data.APIError{
-				Message: "error getting repos",
+				Message: fmt.Sprintf("error getting repos: %s", err.Error()),
 				Status:  fiber.StatusInternalServerError,
 			},
 		})
@@ -41,7 +43,7 @@ func GetRepoById(c *fiber.Ctx) error {
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": data.APIError{
-				Message: "error getting user id",
+				Message: fmt.Sprintf("error getting user id: %s", err.Error()),
 				Status:  fiber.StatusInternalServerError,
 			},
 		})
@@ -69,7 +71,7 @@ func CreateRepo(c *fiber.Ctx) error {
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": data.APIError{
-				Message: "error getting user id",
+				Message: fmt.Sprintf("error getting user id: %s", err.Error()),
 				Status:  fiber.StatusInternalServerError,
 			},
 		})
@@ -79,7 +81,7 @@ func CreateRepo(c *fiber.Ctx) error {
 	if err := c.BodyParser(repo); err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": data.APIError{
-				Message: "error parsing request body",
+				Message: fmt.Sprintf("error parsing request body: %s", err.Error()),
 				Status:  fiber.StatusInternalServerError,
 			},
 		})
@@ -91,7 +93,7 @@ func CreateRepo(c *fiber.Ctx) error {
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": data.APIError{
-				Message: "error creating repo",
+				Message: err.Error(),
 				Status:  fiber.StatusInternalServerError,
 			},
 		})
@@ -107,7 +109,7 @@ func UpdateRepo(c *fiber.Ctx) error {
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": data.APIError{
-				Message: "error getting user id",
+				Message: fmt.Sprintf("error getting user id: %s", err.Error()),
 				Status:  fiber.StatusInternalServerError,
 			},
 		})
@@ -116,7 +118,7 @@ func UpdateRepo(c *fiber.Ctx) error {
 	if err := c.BodyParser(repo); err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": data.APIError{
-				Message: "error parsing request body",
+				Message: fmt.Sprintf("error parsing request body: %s", err.Error()),
 				Status:  fiber.StatusInternalServerError,
 			},
 		})
@@ -134,7 +136,7 @@ func UpdateRepo(c *fiber.Ctx) error {
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": data.APIError{
-				Message: "error updating repo",
+				Message: fmt.Sprintf("error updating repo: %s", err.Error()),
 				Status:  fiber.StatusInternalServerError,
 			},
 		})
@@ -150,7 +152,7 @@ func DeleteRepo(c *fiber.Ctx) error {
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": data.APIError{
-				Message: "error getting user id",
+				Message: fmt.Sprintf("error getting user id: %s", err.Error()),
 				Status:  fiber.StatusInternalServerError,
 			},
 		})
@@ -171,7 +173,7 @@ func DeleteRepo(c *fiber.Ctx) error {
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": data.APIError{
-				Message: "error deleting repo",
+				Message: fmt.Sprintf("error deleting repo: %s", err.Error()),
 				Status:  fiber.StatusInternalServerError,
 			},
 		})

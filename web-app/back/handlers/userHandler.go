@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"fmt"
 	"os"
 	"time"
 
@@ -27,7 +28,7 @@ func Login(c *fiber.Ctx) error {
 	if err != nil {
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
 			"error": data.APIError{
-				Message: "user not found",
+				Message: fmt.Sprintf("user not found: %s", err.Error()),
 				Status:  fiber.StatusNotFound,
 			},
 		})
