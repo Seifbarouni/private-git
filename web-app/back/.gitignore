@@ -1,3 +1,6 @@
 .env
 bin/
 deploy/
+
+utils/admin
+utils/admin.pk
