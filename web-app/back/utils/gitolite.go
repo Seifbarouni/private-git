@@ -97,11 +97,13 @@ func addLineToFile(filename string, line string, lineToAdd string, errChan chan 
 
 	scanner := bufio.NewScanner(file)
 	lines := []string{}
+	f := false
 	for scanner.Scan() {
 		txt := scanner.Text()
 		lines = append(lines, txt)
 		if txt == line {
 			lines = append(lines, lineToAdd)
+			f = true
 		}
 	}
 	if err = scanner.Err(); err != nil {
@@ -109,6 +111,11 @@ func addLineToFile(filename string, line string, lineToAdd string, errChan chan 
 		return
 	}
 	file.Close()
+
+	if !f {
+		lines = append(lines, line)
+		lines = append(lines, lineToAdd)
+	}
 
 	newContent := strings.Join(lines, "\n")
 
