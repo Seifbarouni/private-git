@@ -8,7 +8,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
-var AccessService data.AccessServiceInterface = data.InitAccessService()
+var accessService data.AccessServiceInterface = data.InitAccessService()
 
 func GrantAccess(c *fiber.Ctx) error {
 	userID, err := getUserIdFromToken(c)
@@ -42,7 +42,7 @@ func GrantAccess(c *fiber.Ctx) error {
 		})
 	}
 
-	err = AccessService.GrantAccess(access)
+	err = accessService.GrantAccess(access)
 
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
@@ -68,7 +68,7 @@ func GetAccesses(c *fiber.Ctx) error {
 		})
 	}
 
-	access, err := AccessService.GetAccessesByUserId(userID.Hex())
+	access, err := accessService.GetAccessesByUserId(userID.Hex())
 
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
@@ -128,7 +128,7 @@ func RevokeAccess(c *fiber.Ctx) error {
 		})
 	}
 
-	err = AccessService.RevokeAccess(rev_user_id, repo)
+	err = accessService.RevokeAccess(rev_user_id, repo)
 
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{

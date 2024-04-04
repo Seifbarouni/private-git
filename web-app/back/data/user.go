@@ -2,7 +2,6 @@ package data
 
 import (
 	"context"
-	"encoding/base64"
 	"errors"
 
 	"github.com/Seifbarouni/private-git/web-app/back/db"
@@ -22,12 +21,17 @@ type User struct {
 	Repos    []primitive.ObjectID `bson:"repos" json:"repos"`
 }
 
+type SSHKey struct {
+	Key string `json:"ssh_key"`
+}
+
 type UserServiceInterface interface {
 	CreateUser(user *User) error
 	GetUser(id primitive.ObjectID) (*User, error)
 	GetUserByEmail(email string) (*User, error)
 	UpdateUser(user *User) error
 	DeleteUser(id primitive.ObjectID) error
+	AddPublicKey(id primitive.ObjectID, key string) error
 }
 
 type UserService struct{}
@@ -74,11 +78,7 @@ func (us *UserService) GetUserByEmail(email string) (*User, error) {
 }
 
 func (us *UserService) AddPublicKey(id primitive.ObjectID, key string) error {
-	encodedKey, err := base64.StdEncoding.DecodeString(key)
-	if err != nil {
-		return err
-	}
-	_, err = db.Collection(usersCol).UpdateOne(context.TODO(), bson.M{"_id": id}, bson.M{"$set": bson.M{"ssh_key": encodedKey}})
+	_, err := db.Collection(usersCol).UpdateOne(context.TODO(), bson.M{"_id": id}, bson.M{"$set": bson.M{"ssh_key": key}})
 	return err
 }
 

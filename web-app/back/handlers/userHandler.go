@@ -12,7 +12,7 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-var UserService data.UserServiceInterface = data.InitUserService()
+var userService data.UserServiceInterface = data.InitUserService()
 
 func Login(c *fiber.Ctx) error {
 	var user data.User
@@ -24,7 +24,7 @@ func Login(c *fiber.Ctx) error {
 			},
 		})
 	}
-	userCheck, err := UserService.GetUserByEmail(user.Email)
+	userCheck, err := userService.GetUserByEmail(user.Email)
 	if err != nil {
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
 			"error": data.APIError{
@@ -84,7 +84,7 @@ func Register(c *fiber.Ctx) error {
 	user.Password = hash
 	user.Status = "active"
 
-	if err := UserService.CreateUser(&user); err != nil {
+	if err := userService.CreateUser(&user); err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": data.APIError{
 				Message: err.Error(),
@@ -107,6 +107,42 @@ func Register(c *fiber.Ctx) error {
 	return c.Status(fiber.StatusCreated).JSON(fiber.Map{
 		"message": "user created",
 		"token":   t,
+	})
+}
+
+func AddSSHKey(c *fiber.Ctx) error {
+	userId, err := getUserIdFromToken(c)
+
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": data.APIError{
+				Message: fmt.Sprintf("error getting user id: %s", err.Error()),
+				Status:  fiber.StatusInternalServerError,
+			},
+		})
+	}
+
+	var sshk data.SSHKey
+
+	if err := c.BodyParser(&sshk); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": data.APIError{
+				Message: err.Error(),
+				Status:  fiber.StatusBadRequest,
+			},
+		})
+	}
+
+	if err = userService.AddPublicKey(userId, sshk.Key); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": data.APIError{
+				Message: err.Error(),
+				Status:  fiber.StatusBadRequest,
+			},
+		})
+	}
+	return c.Status(fiber.StatusCreated).JSON(fiber.Map{
+		"message": "added ssh public key",
 	})
 }
 

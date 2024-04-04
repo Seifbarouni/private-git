@@ -48,6 +48,8 @@ func main() {
 			})
 		},
 	}))
+	// user routes
+	v1.Post("/user/sshk", h.AddSSHKey)
 	// repos routes
 	v1.Get("/repos", h.GeRepos)
 	v1.Get("/repos/:id", h.GetRepoById)
