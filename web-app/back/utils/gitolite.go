@@ -2,6 +2,7 @@ package utils
 
 import (
 	"bufio"
+	"encoding/base64"
 	"fmt"
 	"os"
 	"strings"
@@ -30,7 +31,11 @@ func AddUserToRepo(username string, pubKey string, repo string, access string) e
 	// Add user to conf dir
 	go addLineToFile(fmt.Sprintf("%s/conf/gitolite.conf", GitoliteAdminPath), fmt.Sprintf("repo %s", repo), fmt.Sprintf("    %s         =   %s", access, username), errChan, session)
 	// Add user to keydir
-	go addPubKey(username, pubKey, errChan, session)
+	decodedKey, err := base64.StdEncoding.DecodeString(pubKey)
+	if err != nil {
+		return err
+	}
+	go addPubKey(username, string(decodedKey), errChan, session)
 
 	wg.Wait()
 	close(errChan)
