@@ -56,6 +56,13 @@ func (rs *RepoService) CreateRepo(repo *Repo) error {
 
 	repo.ID = primitive.NewObjectID()
 	_, err = db.Collection(reposCol).InsertOne(context.TODO(), repo)
+
+	if err != nil {
+		return err
+	}
+
+	err = userService.AddRepoToUser(repo.ID, repo.Owner)
+
 	return err
 }
 

@@ -32,6 +32,7 @@ type UserServiceInterface interface {
 	UpdateUser(user *User) error
 	DeleteUser(id primitive.ObjectID) error
 	AddPublicKey(id primitive.ObjectID, key string) error
+	AddRepoToUser(repoId primitive.ObjectID, userId primitive.ObjectID) error
 }
 
 type UserService struct{}
@@ -89,5 +90,10 @@ func (us *UserService) UpdateUser(user *User) error {
 
 func (us *UserService) DeleteUser(id primitive.ObjectID) error {
 	_, err := db.Collection(usersCol).UpdateOne(context.TODO(), bson.M{"_id": id}, bson.M{"$set": bson.M{"status": "deleted"}})
+	return err
+}
+
+func (us *UserService) AddRepoToUser(repoId primitive.ObjectID, userId primitive.ObjectID) error {
+	_, err := db.Collection(usersCol).UpdateOne(context.TODO(), bson.M{"_id": userId}, bson.M{"$addToSet": bson.M{"repos": repoId}})
 	return err
 }
