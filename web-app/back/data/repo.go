@@ -43,6 +43,12 @@ func (rs *RepoService) CreateRepo(repo *Repo) error {
 		return err
 	}
 
+	var existantRepo Repo
+	err = db.Collection(reposCol).FindOne(context.TODO(), bson.M{"name": repo.Name, "owner": repo.Owner}).Decode(&existantRepo)
+	if err == nil {
+		return errors.New("repo already exists")
+	}
+
 	err = utils.AddUserToRepo(user.UserName, user.SSHKey, repo.Name, "RW+")
 	if err != nil {
 		return err
