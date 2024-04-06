@@ -1,13 +1,14 @@
 package utils
 
 import (
+	"bytes"
 	"os"
 	"time"
 
 	"golang.org/x/crypto/ssh"
 )
 
-func ConnectToServer() (*ssh.Session, error) {
+func ConnectToServer() (*ssh.Client, error) {
 	publicKey, err := publicKeyFile(os.Getenv("SSH_KEY_PATH"))
 	if err != nil {
 		return nil, err
@@ -23,15 +24,18 @@ func ConnectToServer() (*ssh.Session, error) {
 	}
 
 	client, err := ssh.Dial("tcp", os.Getenv("SSH_SERVER"), sshConfig)
-	if err != nil {
-		return nil, err
-	}
+	return client, err
+}
 
-	session, err := client.NewSession()
-	if err != nil {
-		return nil, err
-	}
-	return session, nil
+func ExecuteCmd(conn *ssh.Client, command string) (bytes.Buffer, error) {
+	session, _ := conn.NewSession()
+	defer session.Close()
+
+	var stdoutBuf bytes.Buffer
+	session.Stdout = &stdoutBuf
+	err := session.Run(command)
+
+	return stdoutBuf, err
 }
 
 func publicKeyFile(file string) (ssh.AuthMethod, error) {

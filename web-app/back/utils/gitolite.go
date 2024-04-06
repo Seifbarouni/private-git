@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"encoding/base64"
 	"fmt"
-	"os"
 	"strings"
 	"sync"
 
@@ -17,25 +16,25 @@ var (
 )
 
 func AddUserToRepo(username string, pubKey string, repo string, access string) error {
-	session, err := ConnectToServer()
+	client, err := ConnectToServer()
 
 	if err != nil {
 		return err
 	}
 
-	defer session.Close()
+	defer client.Close()
 	errChan := make(chan error, 2)
 	wg = sync.WaitGroup{}
 	wg.Add(2)
 
 	// Add user to conf dir
-	go addLineToFile(fmt.Sprintf("%s/conf/gitolite.conf", GitoliteAdminPath), fmt.Sprintf("repo %s", repo), fmt.Sprintf("    %s         =   %s", access, username), errChan, session)
+	go addLineToFile(fmt.Sprintf("%s/conf/gitolite.conf", GitoliteAdminPath), fmt.Sprintf("repo %s", repo), fmt.Sprintf("            %s     =   %s", access, username), errChan, client)
 	// Add user to keydir
 	decodedKey, err := base64.StdEncoding.DecodeString(pubKey)
 	if err != nil {
 		return err
 	}
-	go addPubKey(username, string(decodedKey), errChan, session)
+	go addPubKey(username, string(decodedKey), errChan, client)
 
 	wg.Wait()
 	close(errChan)
@@ -47,60 +46,49 @@ func AddUserToRepo(username string, pubKey string, repo string, access string) e
 	}
 
 	// Add, commit and push changes
-	err = addCommitPush(fmt.Sprintf("Add user %s to repo %s", username, repo), session)
+	err = addCommitPush(fmt.Sprintf("Add user %s to repo %s", username, repo), client)
 
 	return err
 }
 
 func RemoveUserFromRepo(username string, repo string) error {
-	session, err := ConnectToServer()
+	client, err := ConnectToServer()
 
 	if err != nil {
 		return err
 	}
 
-	defer session.Close()
+	defer client.Close()
 
-	err = removeLineFromFile(fmt.Sprintf("%s/conf/gitolite.conf", GitoliteAdminPath), repo, username, session)
+	err = removeLineFromFile(fmt.Sprintf("%s/conf/gitolite.conf", GitoliteAdminPath), repo, username, client)
 
 	if err != nil {
 		return err
 	}
 
-	err = addCommitPush(fmt.Sprintf("Remove user %s from repo %s", username, repo), session)
+	err = addCommitPush(fmt.Sprintf("Remove user %s from repo %s", username, repo), client)
 
 	return err
 }
 
-func addLineToFile(filename string, line string, lineToAdd string, errChan chan error, session *ssh.Session) {
+func addLineToFile(filename string, line string, lineToAdd string, errChan chan error, client *ssh.Client) {
 	defer wg.Done()
 
-	text, err := session.Output(fmt.Sprintf("cat %s", filename))
+	output, err := ExecuteCmd(client, fmt.Sprintf("cat %s", filename))
+
 	if err != nil {
 		errChan <- err
 		return
 	}
 
-	if string(text) == "" {
+	tr := strings.TrimSpace(output.String())
+
+	if tr == "" {
 		errChan <- fmt.Errorf("file %s is empty", filename)
 		return
 	}
 
-	file, err := os.Create("tmp")
-	if err != nil {
-		errChan <- err
-		return
-	}
-
-	writer := bufio.NewWriter(file)
-	_, err = writer.WriteString(string(text))
-	if err != nil {
-		errChan <- err
-		return
-	}
-	writer.Flush()
-
-	scanner := bufio.NewScanner(file)
+	scanner := bufio.NewScanner(strings.NewReader(tr))
 	lines := []string{}
 	f := false
 	for scanner.Scan() {
@@ -115,7 +103,6 @@ func addLineToFile(filename string, line string, lineToAdd string, errChan chan 
 		errChan <- err
 		return
 	}
-	file.Close()
 
 	if !f {
 		lines = append(lines, line)
@@ -124,7 +111,8 @@ func addLineToFile(filename string, line string, lineToAdd string, errChan chan 
 
 	newContent := strings.Join(lines, "\n")
 
-	_, err = session.Output(fmt.Sprintf("echo %s > %s", newContent, filename))
+	_, err = ExecuteCmd(client, fmt.Sprintf("echo '%s' > %s", newContent, filename))
+
 	if err != nil {
 		errChan <- err
 		return
@@ -133,10 +121,10 @@ func addLineToFile(filename string, line string, lineToAdd string, errChan chan 
 	errChan <- nil
 }
 
-func addPubKey(username string, key string, errChan chan error, session *ssh.Session) {
+func addPubKey(username string, key string, errChan chan error, client *ssh.Client) {
 	defer wg.Done()
-
-	_, err := session.Output(fmt.Sprintf("echo %s > %s/keydir/%s.pub", key, GitoliteAdminPath, username))
+	tk := strings.TrimSpace(key)
+	_, err := ExecuteCmd(client, fmt.Sprintf("echo '%s' > %s/keydir/%s.pub", tk, GitoliteAdminPath, username))
 
 	if err != nil {
 		errChan <- err
@@ -146,61 +134,39 @@ func addPubKey(username string, key string, errChan chan error, session *ssh.Ses
 	errChan <- nil
 }
 
-func addCommitPush(msg string, session *ssh.Session) error {
-	_, err := session.Output(fmt.Sprintf("cd %s", GitoliteAdminPath))
-
-	if err != nil {
+func addCommitPush(msg string, client *ssh.Client) error {
+	if _, err := ExecuteCmd(client, fmt.Sprintf("cd %s && git add conf", GitoliteAdminPath)); err != nil {
 		return err
 	}
 
-	_, err = session.Output("git add conf")
-	if err != nil {
+	if _, err := ExecuteCmd(client, fmt.Sprintf("cd %s && git add keydir", GitoliteAdminPath)); err != nil {
 		return err
 	}
 
-	_, err = session.Output("git add keydir")
-	if err != nil {
+	if _, err := ExecuteCmd(client, fmt.Sprintf("cd %s && git commit -m '%s'", GitoliteAdminPath, msg)); err != nil {
 		return err
 	}
 
-	_, err = session.Output(fmt.Sprintf("git commit -m %s", msg))
-	if err != nil {
-		return err
-	}
-
-	_, err = session.Output("git push")
-	if err != nil {
+	if _, err := ExecuteCmd(client, fmt.Sprintf("cd %s && git push", GitoliteAdminPath)); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func removeLineFromFile(filename string, repo string, username string, session *ssh.Session) error {
-	text, err := session.Output(fmt.Sprintf("cat %s", filename))
+func removeLineFromFile(filename string, repo string, username string, client *ssh.Client) error {
+	output, err := ExecuteCmd(client, fmt.Sprintf("cat %s", filename))
 	if err != nil {
 		return err
 	}
 
-	if string(text) == "" {
+	tr := strings.TrimSpace(output.String())
+
+	if tr == "" {
 		return fmt.Errorf("%s is empty", filename)
 	}
 
-	tempFilename := "tmp"
-
-	file, err := os.Create(tempFilename)
-	if err != nil {
-		return err
-	}
-
-	writer := bufio.NewWriter(file)
-	_, err = writer.WriteString(string(text))
-	if err != nil {
-		return err
-	}
-	writer.Flush()
-
-	scanner := bufio.NewScanner(file)
+	scanner := bufio.NewScanner(strings.NewReader(tr))
 	lines := []string{}
 	foundRepo := false
 	for scanner.Scan() {
@@ -222,11 +188,10 @@ func removeLineFromFile(filename string, repo string, username string, session *
 	if err = scanner.Err(); err != nil {
 		return err
 	}
-	file.Close()
 
 	newContent := strings.Join(lines, "\n")
 
-	_, err = session.Output(fmt.Sprintf("echo %s > %s", newContent, filename))
+	_, err = ExecuteCmd(client, fmt.Sprintf("echo '%s' > %s", newContent, filename))
 
 	return err
 }
