@@ -69,7 +69,7 @@ func GetAccesses(c *fiber.Ctx) error {
 		})
 	}
 
-	access, err := accessService.GetAccessesByUserId(userID.Hex())
+	access, err := accessService.GetAccessesByUserId(userID)
 
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
@@ -107,9 +107,18 @@ func RevokeAccess(c *fiber.Ctx) error {
 		})
 	}
 
-	rev_user_id := c.Params("user_id")
+	revUserId := c.Params("user_id")
 
-	if rev_user_id == "" {
+	if revUserId == "" {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": data.APIError{
+				Message: "error getting user id",
+				Status:  fiber.StatusInternalServerError,
+			},
+		})
+	}
+	revUserIdHex, err := primitive.ObjectIDFromHex(revUserId)
+	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": data.APIError{
 				Message: "error getting user id",
@@ -139,7 +148,7 @@ func RevokeAccess(c *fiber.Ctx) error {
 		})
 	}
 
-	err = accessService.RevokeAccess(rev_user_id, repo)
+	err = accessService.RevokeAccess(revUserIdHex, repo)
 
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{

@@ -12,16 +12,16 @@ import (
 
 type Access struct {
 	ID        primitive.ObjectID `bson:"_id" json:"id"`
-	UserId    primitive.ObjectID `bson:"user_id" json:"user_id"`
-	RepoId    primitive.ObjectID `bson:"repo_id" json:"repo_id"`
+	UserId    primitive.ObjectID `bson:"user_id" json:"user_id" validate:"required"`
+	RepoId    primitive.ObjectID `bson:"repo_id" json:"repo_id" validate:"required"`
 	GrantType string             `bson:"grant_type" json:"grant_type"`
 }
 
 type AccessServiceInterface interface {
 	GrantAccess(access *Access) error
-	GetAccessesByRepoId(repoId string) ([]Access, error)
-	GetAccessesByUserId(userId string) ([]Access, error)
-	RevokeAccess(userId string, repo *Repo) error
+	GetAccessesByRepoId(repoId primitive.ObjectID) ([]Access, error)
+	GetAccessesByUserId(userId primitive.ObjectID) ([]Access, error)
+	RevokeAccess(userId primitive.ObjectID, repo *Repo) error
 }
 
 type AccessService struct{}
@@ -49,7 +49,7 @@ func (ac *AccessService) GrantAccess(access *Access) error {
 	return err
 }
 
-func (ac *AccessService) GetAccessesByRepoId(repoId string) ([]Access, error) {
+func (ac *AccessService) GetAccessesByRepoId(repoId primitive.ObjectID) ([]Access, error) {
 	var accesses []Access
 	cursor, err := db.Collection(accessCol).Find(context.TODO(), bson.M{"repo_id": repoId})
 	if err != nil {
@@ -63,7 +63,7 @@ func (ac *AccessService) GetAccessesByRepoId(repoId string) ([]Access, error) {
 	return accesses, nil
 }
 
-func (ac *AccessService) GetAccessesByUserId(repoId string) ([]Access, error) {
+func (ac *AccessService) GetAccessesByUserId(repoId primitive.ObjectID) ([]Access, error) {
 	var accesses []Access
 	cursor, err := db.Collection(accessCol).Find(context.TODO(), bson.M{"user_id": repoId})
 	if err != nil {
@@ -77,13 +77,8 @@ func (ac *AccessService) GetAccessesByUserId(repoId string) ([]Access, error) {
 	return accesses, nil
 }
 
-func (ac *AccessService) RevokeAccess(userId string, repo *Repo) error {
-	primUserId, err := primitive.ObjectIDFromHex(userId)
-	if err != nil {
-		return err
-	}
-
-	user, err := userService.GetUser(primUserId)
+func (ac *AccessService) RevokeAccess(userId primitive.ObjectID, repo *Repo) error {
+	user, err := userService.GetUser(userId)
 	if err != nil {
 		return err
 	}
