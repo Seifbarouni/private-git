@@ -7,24 +7,31 @@ import (
 	"github.com/Seifbarouni/private-git/web-app/back/data"
 	"github.com/Seifbarouni/private-git/web-app/back/db"
 	h "github.com/Seifbarouni/private-git/web-app/back/handlers"
+
 	jwtware "github.com/gofiber/contrib/jwt"
 	"github.com/gofiber/fiber/v2"
+	"github.com/joho/godotenv"
 )
 
 func main() {
-	err := db.Init()
+	err := godotenv.Load(".env")
+	if err != nil {
+		log.Println("Error loading .env file, will us the default environment. If I need a variable and don't find it I will error out")
+	}
+
+	err = db.Init()
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	port := os.Getenv("PORT")
 	if port == "" {
-		log.Fatal("$PORT must be set")
+		log.Fatal("PORT must be set")
 	}
 
 	jwt_secret := os.Getenv("JWT_SECRET")
 	if jwt_secret == "" {
-		log.Fatal("$JWT_SECRET must be set")
+		log.Fatal("JWT_SECRET must be set")
 	}
 
 	app := fiber.New(fiber.Config{
