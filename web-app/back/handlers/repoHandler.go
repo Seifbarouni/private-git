@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/Seifbarouni/private-git/web-app/back/data"
+	"github.com/go-playground/validator/v10"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/golang-jwt/jwt/v5"
@@ -22,8 +23,7 @@ func GeRepos(c *fiber.Ctx) error {
 			},
 		})
 	}
-
-	repos, err := RepoService.GetReposByOwner(userId.Hex())
+	repos, err := RepoService.GetReposByOwner(userId)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": data.APIError{
@@ -50,7 +50,16 @@ func GetRepoById(c *fiber.Ctx) error {
 	}
 
 	repoId := c.Params("id")
-	repo, err := RepoService.GetRepo(repoId, userId.Hex())
+	repoIdHex, err := primitive.ObjectIDFromHex(repoId)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": data.APIError{
+				Message: "Could not parse repo id",
+				Status:  fiber.StatusInternalServerError,
+			},
+		})
+	}
+	repo, err := RepoService.GetRepo(repoIdHex, userId.Hex())
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": data.APIError{
@@ -83,6 +92,16 @@ func CreateRepo(c *fiber.Ctx) error {
 			"error": data.APIError{
 				Message: fmt.Sprintf("error parsing request body: %s", err.Error()),
 				Status:  fiber.StatusInternalServerError,
+			},
+		})
+	}
+
+	validate := validator.New()
+	if err := validate.Struct(repo); err != nil {
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+			"error": data.APIError{
+				Message: err.Error(),
+				Status:  fiber.StatusNotFound,
 			},
 		})
 	}
@@ -123,6 +142,17 @@ func UpdateRepo(c *fiber.Ctx) error {
 			},
 		})
 	}
+
+	validate := validator.New()
+	if err := validate.Struct(repo); err != nil {
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+			"error": data.APIError{
+				Message: err.Error(),
+				Status:  fiber.StatusNotFound,
+			},
+		})
+	}
+
 	if repo.Owner.Hex() != userId.Hex() {
 		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
 			"error": data.APIError{
@@ -159,7 +189,16 @@ func DeleteRepo(c *fiber.Ctx) error {
 	}
 
 	repoId := c.Params("id")
-	repo, err := RepoService.GetRepo(repoId, userId.Hex())
+	repoIdHex, err := primitive.ObjectIDFromHex(repoId)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": data.APIError{
+				Message: err.Error(),
+				Status:  fiber.StatusInternalServerError,
+			},
+		})
+	}
+	repo, err := RepoService.GetRepo(repoIdHex, userId.Hex())
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": data.APIError{

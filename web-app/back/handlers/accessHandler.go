@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/Seifbarouni/private-git/web-app/back/data"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 
 	"github.com/gofiber/fiber/v2"
 )
@@ -31,7 +32,7 @@ func GrantAccess(c *fiber.Ctx) error {
 		})
 	}
 
-	_, err = RepoService.GetRepo(access.RepoId.Hex(), userID.Hex())
+	_, err = RepoService.GetRepo(access.RepoId, userID.Hex())
 
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
@@ -100,7 +101,7 @@ func RevokeAccess(c *fiber.Ctx) error {
 	if repoID == "" {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": data.APIError{
-				Message: "error getting repo id ",
+				Message: "error getting repo id",
 				Status:  fiber.StatusInternalServerError,
 			},
 		})
@@ -117,7 +118,17 @@ func RevokeAccess(c *fiber.Ctx) error {
 		})
 	}
 
-	repo, err := RepoService.GetRepo(repoID, userID.Hex())
+	repoIdHex, err := primitive.ObjectIDFromHex(repoID)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": data.APIError{
+				Message: "error getting repo id, could not parse it to hex",
+				Status:  fiber.StatusInternalServerError,
+			},
+		})
+	}
+
+	repo, err := RepoService.GetRepo(repoIdHex, userID.Hex())
 
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{

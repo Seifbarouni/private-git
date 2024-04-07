@@ -7,6 +7,7 @@ import (
 
 	"github.com/Seifbarouni/private-git/web-app/back/data"
 
+	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
 	"github.com/golang-jwt/jwt/v5"
 	"golang.org/x/crypto/bcrypt"
@@ -24,6 +25,7 @@ func Login(c *fiber.Ctx) error {
 			},
 		})
 	}
+
 	userCheck, err := userService.GetUserByEmail(user.Email)
 	if err != nil {
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
@@ -68,6 +70,16 @@ func Register(c *fiber.Ctx) error {
 			"error": data.APIError{
 				Message: err.Error(),
 				Status:  fiber.StatusBadRequest,
+			},
+		})
+	}
+
+	validate := validator.New()
+	if err := validate.Struct(user); err != nil {
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+			"error": data.APIError{
+				Message: err.Error(),
+				Status:  fiber.StatusNotFound,
 			},
 		})
 	}

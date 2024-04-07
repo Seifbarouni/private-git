@@ -13,7 +13,7 @@ import (
 
 type Repo struct {
 	ID          primitive.ObjectID `bson:"_id" json:"id"`
-	Name        string             `bson:"name" json:"name"`
+	Name        string             `bson:"name" json:"name" validate:"required"`
 	Description string             `bson:"description" json:"description"`
 	Owner       primitive.ObjectID `bson:"owner" json:"owner"`
 	Status      string             `bson:"status" json:"status"`
@@ -21,9 +21,9 @@ type Repo struct {
 
 type RepoServiceInterface interface {
 	CreateRepo(repo *Repo) error
-	GetRepo(id string, userId string) (*Repo, error)
+	GetRepo(id primitive.ObjectID, userId string) (*Repo, error)
 	GetRepos() ([]Repo, error)
-	GetReposByOwner(owner string) ([]Repo, error)
+	GetReposByOwner(owner primitive.ObjectID) ([]Repo, error)
 	UpdateRepo(repo *Repo) error
 	DeleteRepo(id string) error
 }
@@ -66,7 +66,7 @@ func (rs *RepoService) CreateRepo(repo *Repo) error {
 	return err
 }
 
-func (rs *RepoService) GetRepo(id string, userId string) (*Repo, error) {
+func (rs *RepoService) GetRepo(id primitive.ObjectID, userId string) (*Repo, error) {
 	var repo Repo
 	err := db.Collection(reposCol).FindOne(context.TODO(), bson.M{"_id": id}).Decode(&repo)
 	if err != nil {
@@ -99,7 +99,7 @@ func (rs *RepoService) GetRepos() ([]Repo, error) {
 	return repos, nil
 }
 
-func (rs *RepoService) GetReposByOwner(owner string) ([]Repo, error) {
+func (rs *RepoService) GetReposByOwner(owner primitive.ObjectID) ([]Repo, error) {
 	var repos []Repo
 	cursor, err := db.Collection(reposCol).Find(context.TODO(), bson.M{"owner": owner})
 	if err != nil {
