@@ -22,7 +22,7 @@ type User struct {
 }
 
 type SSHKey struct {
-	Key string `json:"ssh_key"`
+	Key string `json:"ssh_key" validate:"required"`
 }
 
 type UserServiceInterface interface {

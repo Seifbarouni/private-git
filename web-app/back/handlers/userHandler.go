@@ -145,6 +145,16 @@ func AddSSHKey(c *fiber.Ctx) error {
 		})
 	}
 
+	validate := validator.New()
+	if err := validate.Struct(sshk); err != nil {
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+			"error": data.APIError{
+				Message: err.Error(),
+				Status:  fiber.StatusNotFound,
+			},
+		})
+	}
+
 	if err = userService.AddPublicKey(userId, sshk.Key); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error": data.APIError{
