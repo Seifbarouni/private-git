@@ -33,8 +33,7 @@ func Init() error {
 
 	slog.Info("Connected to MongoDB")
 
-	//db = client.Database("private-git")
-	db = client.Database("test")
+	db = client.Database(os.Getenv("MONGO_DB_NAME"))
 	return nil
 }
 
