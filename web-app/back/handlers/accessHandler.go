@@ -12,7 +12,7 @@ import (
 var accessService data.AccessServiceInterface = data.InitAccessService()
 
 func GrantAccess(c *fiber.Ctx) error {
-	userID, err := getUserIdFromToken(c)
+	userId, err := getUserIdFromToken(c)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": data.APIError{
@@ -32,7 +32,7 @@ func GrantAccess(c *fiber.Ctx) error {
 		})
 	}
 
-	_, err = RepoService.GetRepo(access.RepoId, userID.Hex())
+	_, err = RepoService.GetRepo(access.RepoId, userId)
 
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
@@ -86,7 +86,7 @@ func GetAccesses(c *fiber.Ctx) error {
 }
 
 func RevokeAccess(c *fiber.Ctx) error {
-	userID, err := getUserIdFromToken(c)
+	userId, err := getUserIdFromToken(c)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": data.APIError{
@@ -137,7 +137,7 @@ func RevokeAccess(c *fiber.Ctx) error {
 		})
 	}
 
-	repo, err := RepoService.GetRepo(repoIdHex, userID.Hex())
+	repo, err := RepoService.GetRepo(repoIdHex, userId)
 
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{

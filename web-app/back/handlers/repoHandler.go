@@ -59,7 +59,7 @@ func GetRepoById(c *fiber.Ctx) error {
 			},
 		})
 	}
-	repo, err := RepoService.GetRepo(repoIdHex, userId.Hex())
+	repo, err := RepoService.GetRepo(repoIdHex, userId)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": data.APIError{
@@ -198,7 +198,7 @@ func DeleteRepo(c *fiber.Ctx) error {
 			},
 		})
 	}
-	repo, err := RepoService.GetRepo(repoIdHex, userId.Hex())
+	repo, err := RepoService.GetRepo(repoIdHex, userId)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": data.APIError{

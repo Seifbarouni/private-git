@@ -21,7 +21,7 @@ type Repo struct {
 
 type RepoServiceInterface interface {
 	CreateRepo(repo *Repo) error
-	GetRepo(id primitive.ObjectID, userId string) (*Repo, error)
+	GetRepo(id primitive.ObjectID, userId primitive.ObjectID) (*Repo, error)
 	GetRepos() ([]Repo, error)
 	GetReposByOwner(owner primitive.ObjectID) ([]Repo, error)
 	UpdateRepo(repo *Repo) error
@@ -66,14 +66,14 @@ func (rs *RepoService) CreateRepo(repo *Repo) error {
 	return err
 }
 
-func (rs *RepoService) GetRepo(id primitive.ObjectID, userId string) (*Repo, error) {
+func (rs *RepoService) GetRepo(id primitive.ObjectID, userId primitive.ObjectID) (*Repo, error) {
 	var repo Repo
 	err := db.Collection(reposCol).FindOne(context.TODO(), bson.M{"_id": id}).Decode(&repo)
 	if err != nil {
 		return nil, err
 	}
 
-	if repo.Owner.Hex() != userId {
+	if repo.Owner.Hex() != userId.Hex() {
 		return nil, errors.New("unauthorized")
 	}
 
