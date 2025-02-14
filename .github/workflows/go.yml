@@ -22,7 +22,7 @@ jobs:
         go-version: '1.22.1'
 
     - name: Build
-      run: go build -v ./web-app/back
+      run: go build -v ../../web-app/back
 
     - name: Test
-      run: go test -v ./web-app/back
+      run: go test -v ../../web-app/back
